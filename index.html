@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Slot - Focus Edition</title>
+    <title>Neon Slot - Safe Bet Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
@@ -12,21 +12,30 @@
 
         /* --- RESPONSIVE VARIABLES --- */
         :root {
-            --symbol-height: clamp(60px, 18vh, 130px);
-            --reel-width: clamp(65px, 25vw, 150px);
+            /* Smanjio sam minimalnu i maksimalnu velicinu simbola da bolje stane */
+            --symbol-height: clamp(50px, 16vh, 120px);
+            --reel-width: clamp(60px, 25vw, 140px);
             --electric-color: #ff00de;
             --electric-secondary: #00ffff;
         }
 
         @media (max-height: 500px) and (orientation: landscape) {
-            :root { --symbol-height: 25vh; --reel-width: 15vh; }
+            :root { --symbol-height: 22vh; --reel-width: 14vh; }
+            /* U landscape modu na telefonu sakrivamo naslov da bi se videla igra */
+            .retro-wrapper { display: none !important; }
+        }
+
+        /* AKO JE EKRAN MALI PO VISINI (ispod 750px), SAKRIJ NASLOV DA STANE ULOG */
+        @media (max-height: 750px) {
+            .retro-wrapper { display: none !important; }
+            .jackpot-container { margin-top: 10px; }
         }
 
         @media (max-width: 320px) {
-            :root { --symbol-height: 50px; --reel-width: 30vw; }
+            :root { --symbol-height: 45px; --reel-width: 28vw; }
             .retro-title, .jackpot-container, .must-drop-label, .heartbeat-container { display: none !important; }
-            body { padding: 5px !important; }
-            .electric-box { padding: 5px !important; border: none !important; background: transparent !important; }
+            body { padding: 2px !important; }
+            .electric-box { padding: 2px !important; border: none !important; background: transparent !important; }
             .electric-box::before, .electric-box::after { display: none !important; }
         }
 
@@ -34,15 +43,17 @@
             background-color: #000000;
             font-family: 'Orbitron', sans-serif;
             color: white;
-            overflow: hidden;
+            /* PROMENA: Dozvoljavamo skrol ako bas mora, da se ulog ne izgubi */
+            overflow-y: auto; 
+            overflow-x: hidden;
             user-select: none;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            cursor: default;
-            height: 100vh;
+            justify-content: center; /* Centrira po visini */
+            min-height: 100vh; /* Min height umesto fixed height */
             touch-action: manipulation;
+            padding-bottom: 20px; /* Malo prostora dole */
         }
 
         .svg-defs { position: absolute; width: 0; height: 0; }
@@ -52,55 +63,32 @@
             position: fixed; top: 0; left: 0; 
             width: 100vw; height: 100vh; 
             overflow: hidden; z-index: -10; pointer-events: none;
-            /* Mnogo tamnija pozadina, crna u centru */
             background: radial-gradient(circle at center, #000000 50%, #150015 100%);
         }
         
         #bg-rings-container { position: absolute; inset: 0; overflow: hidden; perspective: 1000px; }
         
         .hypno-fruit-item {
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 80px; height: 80px; /* Malo veće da se bolje vide oblici */
-            opacity: 0;
-            /* Nema blura, jasne ivice, ali tamne */
-            filter: grayscale(1) brightness(0.3);
-            animation: slow-drift linear infinite;
+            position: absolute; top: 50%; left: 50%; width: 80px; height: 80px; opacity: 0;
+            filter: grayscale(1) brightness(0.3); animation: slow-drift linear infinite;
         }
+        .hypno-fruit-item svg { width: 100%; height: 100%; stroke-width: 1.5; fill: none; stroke: #442244; }
 
-        .hypno-fruit-item svg { 
-            width: 100%; height: 100%; 
-            stroke-width: 1.5; /* Tanja linija */
-            fill: none; 
-            stroke: #442244; /* Veoma tamna ljubičasta/siva boja */
-        }
-
-        /* SPORA ANIMACIJA */
         @keyframes slow-drift {
-            0% {
-                transform: translate(-50%, -50%) rotate(var(--start-angle)) translate(90vmax) rotate(0deg) scale(1.5);
-                opacity: 0;
-            }
-            15% {
-                opacity: 0.3; /* Maksimalna vidljivost je niska - suptilno */
-            }
-            85% {
-                opacity: 0.3;
-            }
-            100% {
-                /* Sporo ide ka centru */
-                transform: translate(-50%, -50%) rotate(calc(var(--start-angle) + 60deg)) translate(0) rotate(-180deg) scale(0.2);
-                opacity: 0;
-            }
+            0% { transform: translate(-50%, -50%) rotate(var(--start-angle)) translate(90vmax) rotate(0deg) scale(1.5); opacity: 0; }
+            15% { opacity: 0.3; } 85% { opacity: 0.3; }
+            100% { transform: translate(-50%, -50%) rotate(calc(var(--start-angle) + 60deg)) translate(0) rotate(-180deg) scale(0.2); opacity: 0; }
         }
 
         /* --- ELECTRIC FRAME --- */
         .electric-box {
             position: relative;
-            background: rgba(0, 0, 0, 0.95); /* Skoro potpuno crna pozadina mašine */
+            background: rgba(0, 0, 0, 0.95);
             border-radius: 24px;
             z-index: 10;
             transition: all 0.3s ease;
+            /* PROMENA: Flex shrink da se ne siri previse */
+            flex-shrink: 0; 
         }
         .electric-box::before {
             content: ''; position: absolute; top: -4px; left: -4px; right: -4px; bottom: -4px;
@@ -186,11 +174,11 @@
         @keyframes flicker-win { 0%, 100% { opacity: 1; stroke-width: 5; } 50% { opacity: 0.6; stroke-width: 4; } }
 
         /* --- JACKPOTS --- */
-        .jackpot-container { display: flex; gap: 4px; width: 100%; max-width: 650px; margin-bottom: 10px; justify-content: center; padding: 0 5px; flex-shrink: 0; }
+        .jackpot-container { display: flex; gap: 4px; width: 100%; max-width: 650px; margin-bottom: 10px; justify-content: center; padding: 0 5px; flex-shrink: 0; flex-wrap: wrap; }
         .jackpot-box {
             flex: 1; background: #000; border: 1px solid #333; border-radius: 8px; padding: 4px;
             text-align: center; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;
-            transition: all 0.3s; min-width: 0;
+            transition: all 0.3s; min-width: 80px;
         }
         .jackpot-label { font-size: 0.6rem; font-weight: bold; letter-spacing: 1px; margin-bottom: 2px; text-transform: uppercase; font-family: sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .jackpot-value { font-size: clamp(0.8rem, 3vw, 1.2rem); font-weight: 700; font-family: 'Orbitron', sans-serif; letter-spacing: 0; font-variant-numeric: tabular-nums; z-index: 2; position: relative; }
@@ -286,7 +274,7 @@
         <div id="bg-rings-container"></div>
     </div>
 
-    <!-- TITLE -->
+    <!-- TITLE (Sakriva se na malim ekranima) -->
     <div class="mb-2 text-center z-10 retro-wrapper">
         <h1 class="retro-title" data-text="NEON NIGHTS">NEON NIGHTS</h1>
     </div>
@@ -314,7 +302,7 @@
     </div>
 
     <!-- MACHINE -->
-    <div class="electric-box neon-box flex flex-col items-center gap-2 w-full max-w-2xl z-10 p-2 md:p-6 lg:p-8">
+    <div class="electric-box neon-box flex flex-col items-center gap-2 w-full max-w-2xl z-10 p-2 md:p-6 lg:p-8 mt-auto mb-auto">
         <div class="flex justify-between w-full gap-2 mb-1 px-2">
             <div class="neon-stat-box stat-credit">
                 <div class="stat-content">
@@ -492,7 +480,7 @@
         function openInfoModal() { els.infoModal.style.display = 'flex'; }
         function closeInfoModal() { els.infoModal.style.display = 'none'; }
 
-        /* --- NOVI SPORI BACKGROUND --- */
+        /* --- BACKGROUND --- */
         function initBackgroundFruits() {
             if(window.innerWidth < 600 && window.innerWidth > 320) {
                 createParticles(30);
@@ -514,7 +502,6 @@
                 item.className = `hypno-fruit-item ${fruit.cls}`;
                 item.innerHTML = fruit.svg();
                 
-                // VEOMA SPORO: između 20s i 40s
                 const startAngle = Math.random() * 360;
                 const duration = 20 + Math.random() * 20; 
                 const delay = Math.random() * -30;
@@ -733,5 +720,4 @@
         function getSimpleBonus() { return `<svg viewBox="0 0 100 100" class="neon-svg"><circle cx="50" cy="50" r="40" stroke="currentColor" fill="none"/><circle cx="50" cy="50" r="30" stroke="currentColor" fill="none" opacity="0.7"/><circle cx="50" cy="50" r="10" stroke="currentColor" fill="currentColor"/><line x1="50" y1="5" x2="50" y2="95" stroke="currentColor"/><line x1="5" y1="50" x2="95" y2="50" stroke="currentColor"/></svg>`; }
     </script>
 </body>
-
 </html>
